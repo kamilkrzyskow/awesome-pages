@@ -1,7 +1,10 @@
 import warnings
 from pathlib import Path
+
+import mkdocs.utils
+import mkdocs.utils.meta
 from natsort import natsort_keygen
-from typing import List, Optional, Union, Set
+from typing import List, Optional, Union, Set, Tuple, Dict
 
 from mkdocs.structure.nav import (
     Navigation as MkDocsNavigation,
@@ -79,13 +82,24 @@ class AwesomeNavigation:
         return result
 
     def _order(self, items: List[NavigationItem], meta: Meta):
+        if len(items) < 2:
+            return
+
         order = meta.order or self.options.order
         sort_type = meta.sort_type or self.options.sort_type
-        if order is None and sort_type is None:
+        order_by = meta.order_by or self.options.order_by
+
+        if order is None and sort_type is None and order_by is None:
             return
-        key = lambda i: basename(self._get_item_path(i))
+
+        if order_by == Meta.ORDER_BY_TITLE:
+            key = lambda i: i.title
+        else:
+            key = lambda i: basename(self._get_item_path(i))
+
         if sort_type == Meta.SORT_NATURAL:
             key = natsort_keygen(key)
+
         items.sort(key=key, reverse=order == Meta.ORDER_DESC)
 
     def _nav(self, items: List[NavigationItem], meta: Meta) -> List[NavigationItem]:
@@ -207,29 +221,48 @@ class NavigationMeta:
         explicit_sections: Set[Section],
     ):
         self.options = options
-        self.sections = {}
+        self.sections: Dict[Section, Meta] = {}
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path = self._gather_metadata(items)
+        root_path, root_pages = self._gather_metadata(items)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-    def _gather_metadata(self, items: List[NavigationItem]) -> Optional[str]:
-        paths = []
+        if self.root.order_by == Meta.ORDER_BY_TITLE:
+            for page in root_pages:
+                assure_title_for_page(page)
+
+    def _gather_metadata(self, items: List[NavigationItem]) -> Optional[Tuple[str, List[Page]]]:
+        paths: List[str] = []
+        pages: List[Page] = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
+
+                    if self.options.order_by == Meta.ORDER_BY_TITLE:
+                        assure_title_for_page(item)
+                    else:
+                        pages.append(item)
             elif isinstance(item, Section):
-                section_dir = self._gather_metadata(item.children)
+                section_dir, section_pages = self._gather_metadata(item.children)
+
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
-                else:
-                    if section_dir is not None:
-                        paths.append(section_dir)
-                    self.sections[item] = Meta.try_load_from(join_paths(section_dir, self.options.filename))
+                    continue
 
-        return self._common_dirname(paths)
+                if section_dir is not None:
+                    paths.append(section_dir)
+
+                section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
+
+                if section_meta.order_by == Meta.ORDER_BY_TITLE:
+                    for page in section_pages:
+                        assure_title_for_page(page)
+
+                self.sections[item] = section_meta
+
+        return self._common_dirname(paths), pages
 
     @staticmethod
     def _common_dirname(paths: List[Optional[str]]) -> Optional[str]:
@@ -249,3 +282,36 @@ def get_by_type(nav, T):
         if item.children:
             ret.extend(get_by_type(item.children, T))
     return ret
+
+
+# Copy of mkdocs.structure.pages.Page._set_title and Page.read_source
+def assure_title_for_page(page: Page):
+    if page.title is not None:
+        return
+
+    try:
+        with open(page.file.abs_src_path, encoding="utf-8-sig", errors="strict") as f:
+            source = f.read()
+    except OSError:
+        raise OSError(f"File not found: {page.file.src_path}")
+    except ValueError:
+        raise ValueError(f"Encoding error reading file: {page.file.src_path}")
+
+    page_markdown, page_meta = mkdocs.utils.meta.get_data(source)
+
+    if "title" in page_meta:
+        page.title = page_meta["title"]
+        return
+
+    title = mkdocs.utils.get_markdown_title(page_markdown)
+
+    if title is None:
+        if page.is_homepage:
+            title = "Home"
+        else:
+            title = page.file.name.replace("-", " ").replace("_", " ")
+            # Capitalize if the filename was all lowercase, otherwise leave it as-is.
+            if title.lower() == title:
+                title = title.capitalize()
+
+    page.title = title
