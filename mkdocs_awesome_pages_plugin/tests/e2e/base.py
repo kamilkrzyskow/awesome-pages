@@ -54,6 +54,8 @@ class E2ETestCase(TestCase):
         collapse_single_pages: Optional[bool] = None,
         mkdocs_nav: Optional[List[Union[str, Dict[str, Union[str, list]]]]] = None,
         strict: Optional[bool] = None,
+        order: Optional[str] = None,
+        sort_type: Optional[str] = None,
     ) -> dict:
 
         plugin_options = self._removeDictNoneValues(
@@ -61,6 +63,8 @@ class E2ETestCase(TestCase):
                 "filename": filename,
                 "collapse_single_pages": collapse_single_pages,
                 "strict": strict,
+                "order": order,
+                "sort_type": sort_type,
             }
         )
         plugins_entry = "awesome-pages"
