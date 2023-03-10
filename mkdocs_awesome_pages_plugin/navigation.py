@@ -1,5 +1,8 @@
 import warnings
 from pathlib import Path
+
+import mkdocs.utils
+import mkdocs.utils.meta
 from natsort import natsort_keygen
 from typing import List, Optional, Union, Set
 
@@ -79,11 +82,21 @@ class AwesomeNavigation:
         return result
 
     def _order(self, items: List[NavigationItem], meta: Meta):
+        if len(items) < 2:
+            return
+
         order = meta.order or self.options.order
         sort_type = meta.sort_type or self.options.sort_type
         if order is None and sort_type is None:
             return
-        key = lambda i: basename(self._get_item_path(i))
+
+        title_ordering = meta.title_ordering if meta.title_ordering is not None else self.options.title_ordering
+
+        if title_ordering:
+            key = lambda i: i.title
+        else:
+            key = lambda i: basename(self._get_item_path(i))
+
         if sort_type == Meta.SORT_NATURAL:
             key = natsort_keygen(key)
         items.sort(key=key, reverse=order == Meta.ORDER_DESC)
@@ -211,17 +224,19 @@ class NavigationMeta:
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path = self._gather_metadata(items)
+        root_path = self._gather_metadata(items, self.options.title_ordering)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-    def _gather_metadata(self, items: List[NavigationItem]) -> Optional[str]:
+    def _gather_metadata(self, items: List[NavigationItem], title_ordering: bool) -> Optional[str]:
         paths = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
+                    if title_ordering:
+                        _assure_title_for_page(item)
             elif isinstance(item, Section):
-                section_dir = self._gather_metadata(item.children)
+                section_dir = self._gather_metadata(item.children, title_ordering)
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
                 else:
@@ -249,3 +264,37 @@ def get_by_type(nav, T):
         if item.children:
             ret.extend(get_by_type(item.children, T))
     return ret
+
+
+# Adapted title extraction for a Page nav item
+# https://github.com/mkdocs/mkdocs/blob/56b235a8ad43f2300d17f87e6fa4de7a3d764397/mkdocs/structure/pages.py#L228
+def _assure_title_for_page(page):
+    if page.title is not None:
+        return
+
+    try:
+        with open(page.file.abs_src_path, encoding="utf-8-sig", errors="strict") as f:
+            source = f.read()
+    except OSError:
+        raise OSError(f"File not found: {page.file.src_path}")
+    except ValueError:
+        raise ValueError(f"Encoding error reading file: {page.file.src_path}")
+
+    page_markdown, page_meta = mkdocs.utils.meta.get_data(source)
+
+    if "title" in page_meta:
+        page.title = page_meta["title"]
+        return
+
+    title = mkdocs.utils.get_markdown_title(page_markdown)
+
+    if title is None:
+        if page.is_homepage:
+            title = "Home"
+        else:
+            title = page.file.name.replace("-", " ").replace("_", " ")
+            # Capitalize if the filename was all lowercase, otherwise leave it as-is.
+            if title.lower() == title:
+                title = title.capitalize()
+
+    page.title = title

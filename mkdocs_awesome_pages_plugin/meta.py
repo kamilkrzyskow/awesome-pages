@@ -109,6 +109,7 @@ class Meta:
     HIDE_ATTRIBUTE = "hide"
     ORDER_ATTRIBUTE = "order"
     SORT_TYPE_ATTRIBUTE = "sort_type"
+    TITLE_ORDERING_ATTRIBUTE = "title_ordering"
 
     ORDER_ASC = "asc"
     ORDER_DESC = "desc"
@@ -126,6 +127,7 @@ class Meta:
         hide: bool = None,
         order: Optional[str] = None,
         sort_type: Optional[str] = None,
+        title_ordering: Optional[bool] = None,
     ):
         if nav is None and arrange is not None:
             nav = [MetaNavItem.from_yaml(value, path) for value in arrange]
@@ -140,6 +142,7 @@ class Meta:
         self.hide = hide
         self.order = order
         self.sort_type = sort_type
+        self.title_ordering = title_ordering
 
     @staticmethod
     def try_load_from(path: Optional[str]) -> "Meta":
@@ -162,6 +165,7 @@ class Meta:
             hide = contents.get(Meta.HIDE_ATTRIBUTE)
             order = contents.get(Meta.ORDER_ATTRIBUTE)
             sort_type = contents.get(Meta.SORT_TYPE_ATTRIBUTE)
+            title_ordering = contents.get(Meta.TITLE_ORDERING_ATTRIBUTE)
 
             if title is not None:
                 if not isinstance(title, str):
@@ -242,6 +246,14 @@ class Meta:
                         )
                     )
 
+            if title_ordering is not None:
+                if not isinstance(title_ordering, bool):
+                    raise TypeError(
+                        'Expected "{attribute}" to be of type bool - got "{ordering}" [{context}]'.format(
+                            attribute=Meta.TITLE_ORDERING_ATTRIBUTE, ordering=title_ordering, context=path
+                        )
+                    )
+
             return Meta(
                 title=title,
                 arrange=arrange,
@@ -252,4 +264,5 @@ class Meta:
                 hide=hide,
                 order=order,
                 sort_type=sort_type,
+                title_ordering=title_ordering,
             )
