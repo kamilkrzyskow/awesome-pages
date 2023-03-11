@@ -31,6 +31,7 @@ class E2ETestCase(TestCase):
         hide: bool = None,
         order: Optional[str] = None,
         sort_type: Optional[str] = None,
+        title_ordering: Optional[bool] = None,
     ) -> Tuple[str, str]:
 
         data = self._removeDictNoneValues(
@@ -43,6 +44,7 @@ class E2ETestCase(TestCase):
                 "hide": hide,
                 "order": order,
                 "sort_type": sort_type,
+                "title_ordering": title_ordering,
             }
         )
 
@@ -56,6 +58,7 @@ class E2ETestCase(TestCase):
         strict: Optional[bool] = None,
         order: Optional[str] = None,
         sort_type: Optional[str] = None,
+        title_ordering: Optional[bool] = None,
     ) -> dict:
 
         plugin_options = self._removeDictNoneValues(
@@ -65,6 +68,7 @@ class E2ETestCase(TestCase):
                 "strict": strict,
                 "order": order,
                 "sort_type": sort_type,
+                "title_ordering": title_ordering,
             }
         )
         plugins_entry = "awesome-pages"

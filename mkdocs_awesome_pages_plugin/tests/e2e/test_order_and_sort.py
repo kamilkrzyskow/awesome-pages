@@ -299,3 +299,96 @@ class TestOrderAndSort(E2ETestCase):
             navigation,
             [("3", "/3"), ("20", [("20", "/20/20"), ("100", "/20/100")]), ("100", "/100")],
         )
+
+    def test_global_asc_title_ordering_without_local_h1_title(self):
+        navigation = self.mkdocs(
+            self.createConfig(order="asc", title_ordering=True),
+            [
+                ("1.md", "# C"),
+                ("B", [("1.md", "# C"), ("2.md", "# B")]),
+                ("3.md", "# A"),
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("A", "/3"), ("B", [("B", "/B/2"), ("C", "/B/1")]), ("C", "/1")],
+        )
+
+    def test_global_asc_title_ordering_without_local_meta_title(self):
+        navigation = self.mkdocs(
+            self.createConfig(order="asc", title_ordering=True),
+            [
+                ("1.md", "---\ntitle: c\n---\n"),
+                ("2.md", "---\ntitle: b\n---\n"),
+                ("3.md", "---\ntitle: a\n---\n"),
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("a", "/3"), ("b", "/2"), ("c", "/1")],
+        )
+
+    def test_global_asc_title_ordering_without_local_no_title(self):
+        navigation = self.mkdocs(
+            self.createConfig(order="asc", title_ordering=True),
+            [
+                "1.md",
+                "2.md",
+                "3.md",
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("1", "/1"), ("2", "/2"), ("3", "/3")],
+        )
+
+    def test_global_asc_title_ordering_local_desc(self):
+        navigation = self.mkdocs(
+            self.createConfig(order="asc", title_ordering=True),
+            [
+                ("1.md", "# C"),
+                ("B", [("1.md", "# C"), ("2.md", "# B"), self.pagesFile(order="desc")]),
+                ("3.md", "# A"),
+                self.pagesFile(order="desc"),
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("C", "/1"), ("B", [("C", "/B/1"), ("B", "/B/2")]), ("A", "/3")],
+        )
+
+    def test_global_asc_title_ordering_local_false(self):
+        navigation = self.mkdocs(
+            self.createConfig(order="asc", title_ordering=True),
+            [
+                ("1.md", "# C"),
+                ("2", [("1.md", "# C"), ("2.md", "# B"), self.pagesFile(title_ordering=False)]),
+                ("3.md", "# A"),
+                self.pagesFile(title_ordering=False),
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("C", "/1"), ("2", [("C", "/2/1"), ("B", "/2/2")]), ("A", "/3")],
+        )
+
+    def test_title_ordering_without_asc(self):
+        navigation = self.mkdocs(
+            self.createConfig(),
+            [
+                ("1.md", "# C"),
+                ("B", [("1.md", "# C"), ("2.md", "# B"), self.pagesFile(title_ordering=True)]),
+                ("3.md", "# A"),
+                self.pagesFile(title_ordering=True),
+            ],
+        )
+
+        self.assertEqual(
+            navigation,
+            [("C", "/1"), ("A", "/3"), ("B", [("C", "/B/1"), ("B", "/B/2")])],
+        )
