@@ -37,7 +37,7 @@ class AwesomePagesPlugin(BasePlugin):
         ("strict", config_options.Type(bool, default=True)),
         (Meta.ORDER_ATTRIBUTE, config_options.Choice([Meta.ORDER_ASC, Meta.ORDER_DESC], default=None)),
         (Meta.SORT_TYPE_ATTRIBUTE, config_options.Choice([Meta.SORT_NATURAL], required=False)),
-        (Meta.TITLE_ORDERING_ATTRIBUTE, config_options.Type(bool, default=False)),
+        (Meta.TITLE_ORDER_ATTRIBUTE, config_options.Type(bool, default=False)),
     )
 
     def __init__(self):

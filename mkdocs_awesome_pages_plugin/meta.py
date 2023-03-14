@@ -109,7 +109,7 @@ class Meta:
     HIDE_ATTRIBUTE = "hide"
     ORDER_ATTRIBUTE = "order"
     SORT_TYPE_ATTRIBUTE = "sort_type"
-    TITLE_ORDERING_ATTRIBUTE = "title_ordering"
+    TITLE_ORDER_ATTRIBUTE = "title_order"
 
     ORDER_ASC = "asc"
     ORDER_DESC = "desc"
@@ -127,7 +127,7 @@ class Meta:
         hide: bool = None,
         order: Optional[str] = None,
         sort_type: Optional[str] = None,
-        title_ordering: Optional[bool] = None,
+        title_order: Optional[bool] = None,
     ):
         if nav is None and arrange is not None:
             nav = [MetaNavItem.from_yaml(value, path) for value in arrange]
@@ -142,7 +142,7 @@ class Meta:
         self.hide = hide
         self.order = order
         self.sort_type = sort_type
-        self.title_ordering = title_ordering
+        self.title_order = title_order
 
     @staticmethod
     def try_load_from(path: Optional[str]) -> "Meta":
@@ -165,7 +165,7 @@ class Meta:
             hide = contents.get(Meta.HIDE_ATTRIBUTE)
             order = contents.get(Meta.ORDER_ATTRIBUTE)
             sort_type = contents.get(Meta.SORT_TYPE_ATTRIBUTE)
-            title_ordering = contents.get(Meta.TITLE_ORDERING_ATTRIBUTE)
+            title_order = contents.get(Meta.TITLE_ORDER_ATTRIBUTE)
 
             if title is not None:
                 if not isinstance(title, str):
@@ -246,11 +246,11 @@ class Meta:
                         )
                     )
 
-            if title_ordering is not None:
-                if not isinstance(title_ordering, bool):
+            if title_order is not None:
+                if not isinstance(title_order, bool):
                     raise TypeError(
                         'Expected "{attribute}" to be a boolean - got {type} [{context}]'.format(
-                            attribute=Meta.TITLE_ORDERING_ATTRIBUTE, type=type(title_ordering), context=path
+                            attribute=Meta.TITLE_ORDER_ATTRIBUTE, type=type(title_order), context=path
                         )
                     )
 
@@ -264,5 +264,5 @@ class Meta:
                 hide=hide,
                 order=order,
                 sort_type=sort_type,
-                title_ordering=title_ordering,
+                title_order=title_order,
             )

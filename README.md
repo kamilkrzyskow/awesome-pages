@@ -128,10 +128,10 @@ sort_type: natural
 
 ### Order Navigation By Title
 
-Create a file named `.pages` in a directory and set the `title_ordering` attribute to `true` to change the order of navigation items.
+Create a file named `.pages` in a directory and set the `title_order` attribute to `true` to change the order of navigation items.
 
 ```yaml
-title_ordering: true
+title_order: true
 ```
 
 This can be combined with `order` and/or `sort_type` above. If `order` is not set it will order ascending.
@@ -392,7 +392,7 @@ plugins:
         strict: false
         order: asc
         sort_type: natural
-        title_ordering: true
+        title_order: true
 ```
 
 ### `filename`
@@ -412,7 +412,7 @@ Raise errors instead of warnings when:
 
 Default is `true`
 
-### `order`, `sort_type` and `title_ordering`
+### `order`, `sort_type` and `title_order`
 
 Global fallback values for the Meta attributes. Default is `None` or `False`.
 

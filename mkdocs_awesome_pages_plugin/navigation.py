@@ -87,12 +87,12 @@ class AwesomeNavigation:
 
         order = meta.order or self.options.order
         sort_type = meta.sort_type or self.options.sort_type
-        title_ordering = meta.title_ordering if meta.title_ordering is not None else self.options.title_ordering
+        title_order = meta.title_order if meta.title_order is not None else self.options.title_order
 
-        if order is None and sort_type is None and not title_ordering:
+        if order is None and sort_type is None and not title_order:
             return
 
-        if title_ordering:
+        if title_order:
             key = lambda i: i.title
         else:
             key = lambda i: basename(self._get_item_path(i))
@@ -225,23 +225,23 @@ class NavigationMeta:
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path, root_pages = self._gather_metadata(items, self.options.title_ordering)
+        root_path, root_pages = self._gather_metadata(items, self.options.title_order)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-        if self.root.title_ordering:
+        if self.root.title_order:
             for page in root_pages:
                 _assure_title_for_page(page)
 
-    def _gather_metadata(self, items: List[NavigationItem], title_ordering: bool) -> Optional[Tuple[str, List[Page]]]:
+    def _gather_metadata(self, items: List[NavigationItem], title_order: bool) -> Optional[Tuple[str, List[Page]]]:
         paths: List[str] = []
         pages: List[Page] = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
-                    _assure_title_for_page(item) if title_ordering else pages.append(item)
+                    _assure_title_for_page(item) if title_order else pages.append(item)
             elif isinstance(item, Section):
-                section_dir, section_pages = self._gather_metadata(item.children, title_ordering)
+                section_dir, section_pages = self._gather_metadata(item.children, title_order)
 
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
@@ -252,7 +252,7 @@ class NavigationMeta:
 
                 section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
 
-                if section_meta.title_ordering:
+                if section_meta.title_order:
                     for page in section_pages:
                         _assure_title_for_page(page)
 
