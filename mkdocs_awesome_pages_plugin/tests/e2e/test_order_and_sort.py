@@ -377,7 +377,7 @@ class TestOrderAndSort(E2ETestCase):
             [("C", "/1"), ("2", [("C", "/2/1"), ("B", "/2/2")]), ("A", "/3")],
         )
 
-    def test_title_ordering_without_asc(self):
+    def test_local_title_ordering_without_global(self):
         navigation = self.mkdocs(
             self.createConfig(),
             [
@@ -390,5 +390,5 @@ class TestOrderAndSort(E2ETestCase):
 
         self.assertEqual(
             navigation,
-            [("C", "/1"), ("A", "/3"), ("B", [("C", "/B/1"), ("B", "/B/2")])],
+            [("A", "/3"), ("B", [("B", "/B/2"), ("C", "/B/1")]), ("C", "/1")],
         )
