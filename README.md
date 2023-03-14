@@ -134,7 +134,7 @@ Create a file named `.pages` in a directory and set the `title_ordering` attribu
 title_ordering: true
 ```
 
-This **must** be combined with `order` and/or `sort_type` above.
+This can be combined with `order` and/or `sort_type` above. If `order` is not set it will order ascending.
 
 ### Collapse Single Nested Pages
 
@@ -415,7 +415,6 @@ Default is `true`
 ### `order`, `sort_type` and `title_ordering`
 
 Global fallback values for the Meta attributes. Default is `None` or `False`.
-`title_ordering` only works if either of the other attributes/fallbacks is enabled.
 
 <br/>
 

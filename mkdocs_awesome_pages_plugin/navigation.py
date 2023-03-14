@@ -4,7 +4,7 @@ from pathlib import Path
 import mkdocs.utils
 import mkdocs.utils.meta
 from natsort import natsort_keygen
-from typing import List, Optional, Union, Set
+from typing import List, Optional, Union, Set, Tuple, Dict
 
 from mkdocs.structure.nav import (
     Navigation as MkDocsNavigation,
@@ -87,10 +87,10 @@ class AwesomeNavigation:
 
         order = meta.order or self.options.order
         sort_type = meta.sort_type or self.options.sort_type
-        if order is None and sort_type is None:
-            return
-
         title_ordering = meta.title_ordering if meta.title_ordering is not None else self.options.title_ordering
+
+        if order is None and sort_type is None and not title_ordering:
+            return
 
         if title_ordering:
             key = lambda i: i.title
@@ -99,6 +99,7 @@ class AwesomeNavigation:
 
         if sort_type == Meta.SORT_NATURAL:
             key = natsort_keygen(key)
+
         items.sort(key=key, reverse=order == Meta.ORDER_DESC)
 
     def _nav(self, items: List[NavigationItem], meta: Meta) -> List[NavigationItem]:
@@ -220,31 +221,47 @@ class NavigationMeta:
         explicit_sections: Set[Section],
     ):
         self.options = options
-        self.sections = {}
+        self.sections: Dict[Section, Meta] = {}
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path = self._gather_metadata(items, self.options.title_ordering)
+        root_path, root_pages = self._gather_metadata(items, self.options.title_ordering)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-    def _gather_metadata(self, items: List[NavigationItem], title_ordering: bool) -> Optional[str]:
-        paths = []
+        if self.root.title_ordering and not self.options.title_ordering:
+            for page in root_pages:
+                _assure_title_for_page(page)
+
+    def _gather_metadata(self, items: List[NavigationItem], title_ordering: bool) -> Optional[Tuple[str, List[Page]]]:
+        paths: List[str] = []
+        pages: List[Page] = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
                     if title_ordering:
                         _assure_title_for_page(item)
+                    else:
+                        pages.append(item)
             elif isinstance(item, Section):
-                section_dir = self._gather_metadata(item.children, title_ordering)
+                section_dir, section_pages = self._gather_metadata(item.children, title_ordering)
+
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
-                else:
-                    if section_dir is not None:
-                        paths.append(section_dir)
-                    self.sections[item] = Meta.try_load_from(join_paths(section_dir, self.options.filename))
+                    continue
 
-        return self._common_dirname(paths)
+                if section_dir is not None:
+                    paths.append(section_dir)
+
+                section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
+
+                if section_meta.title_ordering and not title_ordering:
+                    for page in section_pages:
+                        _assure_title_for_page(page)
+
+                self.sections[item] = section_meta
+
+        return self._common_dirname(paths), pages
 
     @staticmethod
     def _common_dirname(paths: List[Optional[str]]) -> Optional[str]:
@@ -268,7 +285,7 @@ def get_by_type(nav, T):
 
 # Adapted title extraction for a Page nav item
 # https://github.com/mkdocs/mkdocs/blob/56b235a8ad43f2300d17f87e6fa4de7a3d764397/mkdocs/structure/pages.py#L228
-def _assure_title_for_page(page):
+def _assure_title_for_page(page: Page):
     if page.title is not None:
         return
 

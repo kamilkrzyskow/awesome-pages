@@ -249,8 +249,8 @@ class Meta:
             if title_ordering is not None:
                 if not isinstance(title_ordering, bool):
                     raise TypeError(
-                        'Expected "{attribute}" to be of type bool - got "{ordering}" [{context}]'.format(
-                            attribute=Meta.TITLE_ORDERING_ATTRIBUTE, ordering=title_ordering, context=path
+                        'Expected "{attribute}" to be a boolean - got {type} [{context}]'.format(
+                            attribute=Meta.TITLE_ORDERING_ATTRIBUTE, type=type(title_ordering), context=path
                         )
                     )
 
