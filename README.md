@@ -126,7 +126,7 @@ This can be combined with `order` above.
 sort_type: natural
 ```
 
-### Order pages by their titles
+### Order Navigation By Title
 
 Create a file named `.pages` in a directory and set the `title_ordering` attribute to `true` to change the order of navigation items.
 
