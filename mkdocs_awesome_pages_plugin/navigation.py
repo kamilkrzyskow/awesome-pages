@@ -228,7 +228,7 @@ class NavigationMeta:
         root_path, root_pages = self._gather_metadata(items, self.options.title_ordering)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-        if self.root.title_ordering and not self.options.title_ordering:
+        if self.root.title_ordering:
             for page in root_pages:
                 _assure_title_for_page(page)
 
@@ -239,10 +239,7 @@ class NavigationMeta:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
-                    if title_ordering:
-                        _assure_title_for_page(item)
-                    else:
-                        pages.append(item)
+                    _assure_title_for_page(item) if title_ordering else pages.append(item)
             elif isinstance(item, Section):
                 section_dir, section_pages = self._gather_metadata(item.children, title_ordering)
 
@@ -255,7 +252,7 @@ class NavigationMeta:
 
                 section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
 
-                if section_meta.title_ordering and not title_ordering:
+                if section_meta.title_ordering:
                     for page in section_pages:
                         _assure_title_for_page(page)
 
