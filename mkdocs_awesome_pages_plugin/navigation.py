@@ -225,23 +225,23 @@ class NavigationMeta:
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path, root_pages = self._gather_metadata(items, self.options.title_order)
+        root_path, root_pages = self._gather_metadata(items)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
         if self.root.title_order:
             for page in root_pages:
-                _assure_title_for_page(page)
+                assure_title_for_page(page)
 
-    def _gather_metadata(self, items: List[NavigationItem], title_order: bool) -> Optional[Tuple[str, List[Page]]]:
+    def _gather_metadata(self, items: List[NavigationItem]) -> Optional[Tuple[str, List[Page]]]:
         paths: List[str] = []
         pages: List[Page] = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
-                    _assure_title_for_page(item) if title_order else pages.append(item)
+                    assure_title_for_page(item) if self.options.title_order else pages.append(item)
             elif isinstance(item, Section):
-                section_dir, section_pages = self._gather_metadata(item.children, title_order)
+                section_dir, section_pages = self._gather_metadata(item.children)
 
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
@@ -254,7 +254,7 @@ class NavigationMeta:
 
                 if section_meta.title_order:
                     for page in section_pages:
-                        _assure_title_for_page(page)
+                        assure_title_for_page(page)
 
                 self.sections[item] = section_meta
 
@@ -280,9 +280,8 @@ def get_by_type(nav, T):
     return ret
 
 
-# Adapted title extraction for a Page nav item
-# https://github.com/mkdocs/mkdocs/blob/56b235a8ad43f2300d17f87e6fa4de7a3d764397/mkdocs/structure/pages.py#L228
-def _assure_title_for_page(page: Page):
+# An adapted copy of mkdocs.structure.pages.Page._set_title and Page.read_source
+def assure_title_for_page(page: Page):
     if page.title is not None:
         return
 
