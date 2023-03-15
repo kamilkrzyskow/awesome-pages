@@ -87,12 +87,12 @@ class AwesomeNavigation:
 
         order = meta.order or self.options.order
         sort_type = meta.sort_type or self.options.sort_type
-        title_order = meta.title_order if meta.title_order is not None else self.options.title_order
+        order_by = meta.order_by or self.options.order_by
 
-        if order is None and sort_type is None and not title_order:
+        if order is None and sort_type is None and order_by is None:
             return
 
-        if title_order:
+        if order_by == Meta.ORDER_BY_TITLE:
             key = lambda i: i.title
         else:
             key = lambda i: basename(self._get_item_path(i))
@@ -228,7 +228,7 @@ class NavigationMeta:
         root_path, root_pages = self._gather_metadata(items)
         self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
 
-        if self.root.title_order:
+        if self.root.order_by == Meta.ORDER_BY_TITLE:
             for page in root_pages:
                 assure_title_for_page(page)
 
@@ -239,7 +239,11 @@ class NavigationMeta:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
                     paths.append(item.file.abs_src_path)
-                    assure_title_for_page(item) if self.options.title_order else pages.append(item)
+
+                    if self.options.order_by == Meta.ORDER_BY_TITLE:
+                        assure_title_for_page(item)
+                    else:
+                        pages.append(item)
             elif isinstance(item, Section):
                 section_dir, section_pages = self._gather_metadata(item.children)
 
@@ -252,7 +256,7 @@ class NavigationMeta:
 
                 section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
 
-                if section_meta.title_order:
+                if section_meta.order_by == Meta.ORDER_BY_TITLE:
                     for page in section_pages:
                         assure_title_for_page(page)
 
@@ -280,7 +284,7 @@ def get_by_type(nav, T):
     return ret
 
 
-# An adapted copy of mkdocs.structure.pages.Page._set_title and Page.read_source
+# Copy of mkdocs.structure.pages.Page._set_title and Page.read_source
 def assure_title_for_page(page: Page):
     if page.title is not None:
         return

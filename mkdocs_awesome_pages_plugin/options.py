@@ -7,11 +7,11 @@ class Options:
         strict: bool,
         order: str = None,
         sort_type: str = None,
-        title_order: bool = None
+        order_by: str = None,
     ):
         self.filename = filename
         self.collapse_single_pages = collapse_single_pages
         self.strict = strict
         self.order = order
         self.sort_type = sort_type
-        self.title_order = title_order
+        self.order_by = order_by

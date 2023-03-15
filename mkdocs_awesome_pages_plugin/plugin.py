@@ -12,7 +12,7 @@ from mkdocs.structure.nav import (
 )
 from mkdocs.structure.pages import Page
 
-from .meta import Meta, DuplicateRestItemError, MetaNavRestItem, RestItemList
+from .meta import DuplicateRestItemError, MetaNavRestItem, RestItemList
 from .navigation import AwesomeNavigation, get_by_type, NavigationItem
 from .options import Options
 
@@ -35,9 +35,9 @@ class AwesomePagesPlugin(BasePlugin):
         ("filename", config_options.Type(str, default=DEFAULT_META_FILENAME)),
         ("collapse_single_pages", config_options.Type(bool, default=False)),
         ("strict", config_options.Type(bool, default=True)),
-        (Meta.ORDER_ATTRIBUTE, config_options.Choice([Meta.ORDER_ASC, Meta.ORDER_DESC], default=None)),
-        (Meta.SORT_TYPE_ATTRIBUTE, config_options.Choice([Meta.SORT_NATURAL], required=False)),
-        (Meta.TITLE_ORDER_ATTRIBUTE, config_options.Type(bool, default=False)),
+        ("order", config_options.Choice(["asc", "desc"], default=None)),
+        ("sort_type", config_options.Choice(["natural"], default=None)),
+        ("order_by", config_options.Choice(["filename", "title"], default=None)),
     )
 
     def __init__(self):
