@@ -4,7 +4,7 @@ from pathlib import Path
 import mkdocs.utils
 import mkdocs.utils.meta
 from natsort import natsort_keygen
-from typing import List, Optional, Union, Set, Tuple, Dict
+from typing import List, Optional, Union, Set, Dict, Iterable
 
 from mkdocs.structure.nav import (
     Navigation as MkDocsNavigation,
@@ -225,47 +225,38 @@ class NavigationMeta:
         self.docs_dir = docs_dir
         self.explicit_sections = explicit_sections
 
-        root_path, root_pages = self._gather_metadata(items)
-        self.root = Meta.try_load_from(join_paths(root_path, self.options.filename))
+        self.root: Meta = self._gather_metadata(items)
 
-        if self.root.order_by == Meta.ORDER_BY_TITLE:
-            for page in root_pages:
-                assure_title_for_page(page)
+    def _gather_metadata(self, items: List[NavigationItem]) -> Meta:
+        paths_to_pages: Dict[str, Optional[Page]] = {}
 
-    def _gather_metadata(self, items: List[NavigationItem]) -> Optional[Tuple[str, List[Page]]]:
-        paths: List[str] = []
-        pages: List[Page] = []
         for item in items:
             if isinstance(item, Page):
                 if Path(self.docs_dir) in Path(item.file.abs_src_path).parents:
-                    paths.append(item.file.abs_src_path)
-
-                    if self.options.order_by == Meta.ORDER_BY_TITLE:
-                        assure_title_for_page(item)
-                    else:
-                        pages.append(item)
+                    paths_to_pages[item.file.abs_src_path] = item
             elif isinstance(item, Section):
-                section_dir, section_pages = self._gather_metadata(item.children)
+                section_meta = self._gather_metadata(item.children)
 
                 if item in self.explicit_sections:
                     self.sections[item] = Meta()
                     continue
 
-                if section_dir is not None:
-                    paths.append(section_dir)
-
-                section_meta = Meta.try_load_from(join_paths(section_dir, self.options.filename))
-
-                if section_meta.order_by == Meta.ORDER_BY_TITLE:
-                    for page in section_pages:
-                        assure_title_for_page(page)
+                if section_meta.path is not None:
+                    paths_to_pages[dirname(section_meta.path)] = None
 
                 self.sections[item] = section_meta
 
-        return self._common_dirname(paths), pages
+        common_dir: str = self._common_dirname(paths_to_pages.keys())
+        gathered_meta: Meta = Meta.try_load_from(join_paths(common_dir, self.options.filename))
+
+        if gathered_meta.order_by == Meta.ORDER_BY_TITLE or self.options.order_by == Meta.ORDER_BY_TITLE:
+            for page in paths_to_pages.values():
+                assure_title_for_page(page)
+
+        return gathered_meta
 
     @staticmethod
-    def _common_dirname(paths: List[Optional[str]]) -> Optional[str]:
+    def _common_dirname(paths: Iterable[str]) -> Optional[str]:
         if paths:
             dirnames = [dirname(path) for path in paths]
             if len(set(dirnames)) == 1:
@@ -286,7 +277,7 @@ def get_by_type(nav, T):
 
 # Copy of mkdocs.structure.pages.Page._set_title and Page.read_source
 def assure_title_for_page(page: Page):
-    if page.title is not None:
+    if page is None or page.title is not None:
         return
 
     try:
